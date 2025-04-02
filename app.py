@@ -1,72 +1,16 @@
 import ollama
-import pandas as pd
-import requests
-from bs4 import BeautifulSoup
-from sentence_transformers import SentenceTransformer, util
 
+TOPIC = "Anni di piombo"
 
-file_excel_links = "link_fonti.xlsx"
-df_links = pd.read_excel(file_excel_links)
-
-
-df_links.columns = df_links.columns.str.strip()
-
-
-print("Colonne trovate nel file dei link:", df_links.columns)
-
-links = df_links['Links'].dropna().tolist()
-
-
-file_excel_parole_chiave = "ParoleChiave.xlsx"  
-df_parole_chiave = pd.read_excel(file_excel_parole_chiave)
-
-
-df_parole_chiave.columns = df_parole_chiave.columns.str.strip()
-
-
-print("Colonne trovate nel file delle parole chiave:", df_parole_chiave.columns)
-
-
-parole_chiave = df_parole_chiave['ParoleChiave'].dropna().tolist()
-
-
-def scarica_testo(url):
-    try:
-        response = requests.get(url, timeout=5)
-        response.raise_for_status()  
-        soup = BeautifulSoup(response.text, "html.parser")
-        return " ".join([p.get_text() for p in soup.find_all("p")]) 
-    except Exception as e:
-        print(f"Errore nel caricamento di {url}: {e}")
-        return ""  
-
-
-testo_fonti = " ".join([scarica_testo(link) for link in links])[:10000]
-
-model = SentenceTransformer('all-MiniLM-L6-v2')
-
-
-corpus_embeddings = model.encode([testo_fonti], convert_to_tensor=True)
 
 print("##############")
-print("Domande su: Anni di piombo")
+print(f"Domande su: {TOPIC}")
 print("##############")
 
 while True:
-
     userinput = input("You: ").strip().lower()
-
-
-    question_embedding = model.encode([userinput], convert_to_tensor=True)
-
-    similarity = util.pytorch_cos_sim(question_embedding, corpus_embeddings)[0][0].item()
-
-
-    if similarity > 0.3:  
-        response = ollama.generate(
+    response = ollama.generate(
             model='llama3',
-            prompt=f"Rispondi alla seguente domanda usando solo queste informazioni:\n\n{testo_fonti}\n\nDomanda: {userinput}\nRisposta:"
+            prompt=f"Rispondi alla seguente domanda usando solo informazioni relative agli Anni di Piombo se non centra niente allora non rispondere però rispondi a domande di presetazione del utente (com'è stai ? o ciao):\n\nDomanda: {userinput}\nRisposta:"
         )
-        print("Ollama:", response['response'])
-    else:
-        print("Ollama: Questa domanda non è correlata agli argomenti trattati nei link forniti.")
+    print("Ollama:", response['response'])
