@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { io } from 'socket.io-client';  // Importa io correttamente
+import { io } from 'socket.io-client';
 
 @Component({
   selector: 'app-chat',
@@ -14,8 +14,8 @@ export class ChatComponent implements OnInit {
   isTyping: boolean = false;  // Nuova variabile per gestire lo stato di "scrittura" del server
 
   ngOnInit() {
-    // Connessione al server Flask con Socket.IO (se necessario per la gestione in tempo reale)
-    this.socket = io('https://5000-andrea1932734-realtime-yzlu2wvctoc.ws-eu118.gitpod.io');  // Modifica l'URL se necessario
+    // Connessione al server Flask con Socket.IO (usa l'URL corretto)
+    this.socket = io('http://localhost:5000');  // Cambia l'URL a quello del tuo server Flask
 
     // Ascolta i messaggi ricevuti dal server
     this.socket.on('message', (msg: string) => {
@@ -33,23 +33,14 @@ export class ChatComponent implements OnInit {
       // Indica che il server sta scrivendo
       this.isTyping = true;
 
-      // Simula una risposta dal server dopo 5 secondi
+      // Invia il messaggio al server tramite WebSocket
+      this.socket.emit('message', this.message);
+
+      // Imposta il timeout per simulare un ritardo nella risposta
       setTimeout(() => {
-        this.receiveServerResponse();
+        this.isTyping = false;
       }, 5000);  // 5000 ms = 5 secondi
     }
-  }
-
-  // Metodo per gestire la risposta simulata del server
-  receiveServerResponse() {
-    // Aggiungi un messaggio di risposta simulata
-    const serverMessage = "Server: Ciao, come posso aiutarti?";  // Puoi personalizzare questo messaggio
-
-    // Aggiungi la risposta del server alla chat
-    this.messages.push(serverMessage);
-
-    // Nascondi l'indicatore di "scrittura" del server
-    this.isTyping = false;
   }
 
   // Metodo per aprire il popup della chat

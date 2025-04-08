@@ -1,29 +1,31 @@
 from flask import Flask, render_template
-from flask_socketio import SocketIO, send
-from flask_cors import CORS  # Importa CORS
-import threading
+from flask_socketio import SocketIO, emit
+import ollama
 
 app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins="*")
-
-def send_timed_message():
-    socketio.emit('message', 'Messaggio inviato dal server dopo 5 secondi!')
-
+socketio = SocketIO(app)
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
-@socketio.on('connect')
-def handle_connect():
-    print('Client connesso')
-    timer = threading.Timer(5.0, send_timed_message) # Invia il messaggio dopo 5 secondi
-    timer.start()
-
 @socketio.on('message')
 def handle_message(msg):
-    print(f"Messaggio ricevuto: {msg}")
-    send(msg, broadcast=True)
+    print(f"Received message: {msg}")
+
+    # Logica per generare la risposta con Ollama
+    response = ollama.chat(
+        model='llama3',
+        messages=[{
+            "role": "user",
+            "content": f" Rispondi alla seguente domanda usando solo informazioni relative agli Anni di Piombo se non centra niente allora non rispondere però rispondi a domande di presentazione dell'utente (com'è stai ? o ciao). Rispondi in breve, più veloce possibile:\n\nDomanda: {msg}\nRisposta:"
+        }],
+        stream=True
+    )
+
+    # Invio della risposta al frontend
+    for chunk in response:
+        emit('message', chunk['message']['content'])
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5000)
+    socketio.run(app, debug=True)
